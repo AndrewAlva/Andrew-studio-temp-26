@@ -140,22 +140,59 @@ declare module 'astro:content' {
 	>;
 
 	type ContentEntryMap = {
-		"about": Record<string, {
-  id: string;
-  slug: string;
+		"about": {
+"index.md": {
+	id: "index.md";
+  slug: "index";
   body: string;
   collection: "about";
-  data: InferEntrySchema<"about">;
-  render(): Render[".md"];
-}>;
-"projects": Record<string, {
-  id: string;
-  slug: string;
+  data: any
+} & { render(): Render[".md"] };
+};
+"projects": {
+"example-project.md": {
+	id: "example-project.md";
+  slug: "example-project";
   body: string;
   collection: "projects";
-  data: InferEntrySchema<"projects">;
-  render(): Render[".md"];
-}>;
+  data: any
+} & { render(): Render[".md"] };
+"forma.md": {
+	id: "forma.md";
+  slug: "forma";
+  body: string;
+  collection: "projects";
+  data: any
+} & { render(): Render[".md"] };
+"marea.md": {
+	id: "marea.md";
+  slug: "marea";
+  body: string;
+  collection: "projects";
+  data: any
+} & { render(): Render[".md"] };
+"nocturno.md": {
+	id: "nocturno.md";
+  slug: "nocturno";
+  body: string;
+  collection: "projects";
+  data: any
+} & { render(): Render[".md"] };
+"raiz.md": {
+	id: "raiz.md";
+  slug: "raiz";
+  body: string;
+  collection: "projects";
+  data: any
+} & { render(): Render[".md"] };
+"volta.md": {
+	id: "volta.md";
+  slug: "volta";
+  body: string;
+  collection: "projects";
+  data: any
+} & { render(): Render[".md"] };
+};
 
 	};
 
@@ -165,5 +202,5 @@ declare module 'astro:content' {
 
 	type AnyEntryMap = ContentEntryMap & DataEntryMap;
 
-	export type ContentConfig = typeof import("../../src/content/config.js");
+	export type ContentConfig = never;
 }
