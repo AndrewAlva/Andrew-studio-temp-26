@@ -5,11 +5,10 @@ import ProjectCard from './ProjectCard.astro';
 const projects = (await getCollection('projects')).sort(
   (a, b) => a.data.order - b.data.order
 );
-// TODO: implement ProjectShowcase grid
 ---
 
 <section id="projects" aria-label="Projects">
-  <ul class="project-grid">
+  <ul class="project-grid" role="list">
     {projects.map((project) => (
       <li>
         <ProjectCard project={project} />
@@ -19,5 +18,27 @@ const projects = (await getCollection('projects')).sort(
 </section>
 
 <style>
-  /* TODO: grid styles — 2 col desktop, 1 col mobile */
+  section {
+    padding: 5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem 2rem;
+    list-style: none;
+  }
+
+  @media (max-width: 640px) {
+    section {
+      padding: 3rem 1.25rem;
+    }
+
+    .project-grid {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+  }
 </style>

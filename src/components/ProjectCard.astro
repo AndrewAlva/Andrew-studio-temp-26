@@ -8,19 +8,69 @@ interface Props {
 
 const { project } = Astro.props;
 const { title, client, year, type, thumbnail, thumbnailType, thumbnailAlt } = project.data;
-// TODO: implement ProjectCard layout — thumb + metadata
 ---
 
 <article class="project-card">
   <MediaThumb src={thumbnail} type={thumbnailType} alt={thumbnailAlt} />
   <div class="project-meta">
     <h3 class="project-title">{title}</h3>
-    <span class="project-client">{client}</span>
-    <span class="project-year">{year}</span>
-    <span class="project-type">{type}</span>
+    <div class="project-details">
+      <span class="project-client">{client}</span>
+      <span class="project-year">{year}</span>
+      <span class="project-type">{type}</span>
+    </div>
   </div>
 </article>
 
 <style>
-  /* TODO: card styles */
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .project-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+  }
+
+  .project-details {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+
+  .project-client {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-secondary);
+  }
+
+  .project-year,
+  .project-type {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .project-year::before,
+  .project-type::before {
+    content: '·';
+    margin: 0 0.5rem;
+    opacity: 0.4;
+  }
 </style>

@@ -1,34 +1,105 @@
 ---
 import { SITE_NAME } from '../config/site';
-// TODO: implement Nav — sticky, skip-nav, site name, Home/About links, contact button
 ---
 
 <a class="skip-nav" href="#main-content">Skip to content</a>
 
-<nav aria-label="Main navigation">
-  <a href="/" class="site-name" aria-label={SITE_NAME}>
-    <!-- TODO: site name in --font-serif italic -->
-    {SITE_NAME}
-  </a>
-  <ul>
-    <li><a href="/">Home</a></li>
-    <li><a href="/about">About</a></li>
-    <li>
-      <button
-        id="contact-open-btn"
-        aria-label="Open contact form"
-        type="button"
-      >
-        Contact
-      </button>
-    </li>
-  </ul>
-</nav>
+<header class="nav-wrapper">
+  <nav class="nav" aria-label="Main navigation">
+    <a href="/" class="nav-site-name">{SITE_NAME}</a>
+    <ul class="nav-links" role="list">
+      <li><a href="/" class="nav-link">Home</a></li>
+      <li><a href="/about" class="nav-link">About</a></li>
+      <li>
+        <button
+          id="contact-open-btn"
+          type="button"
+          aria-label="Open contact form"
+          class="nav-contact-btn"
+        >
+          Contact
+        </button>
+      </li>
+    </ul>
+  </nav>
+</header>
 
 <style>
-  /* TODO: sticky nav styles */
+  .nav-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--nav-height);
+    padding: 0 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .nav-site-name {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--color-text);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    transition: color 300ms ease-out;
+  }
+
+  .nav-site-name:hover {
+    color: var(--color-text-secondary);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-link {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--color-text);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: color 300ms ease-out;
+  }
+
+  .nav-link:hover {
+    color: var(--color-text-secondary);
+  }
+
+  .nav-contact-btn {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--color-text);
+    background: none;
+    border: 1px solid currentColor;
+    padding: 0.35rem 1rem;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 300ms ease-out, color 300ms ease-out;
+  }
+
+  .nav-contact-btn:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
 </style>
 
 <script>
-  // TODO: wire button to modal.ts showModal()
+  import { openModal } from '../utils/modal';
+
+  const btn = document.getElementById('contact-open-btn') as HTMLButtonElement | null;
+  btn?.addEventListener('click', () => openModal(btn));
 </script>

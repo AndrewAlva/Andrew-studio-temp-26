@@ -8,7 +8,6 @@ interface Props {
 
 const { title, description } = Astro.props;
 const ogTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME;
-// TODO: implement full BaseHead with Google Fonts, CSS custom properties, and reset
 ---
 
 <meta charset="UTF-8" />
@@ -23,10 +22,20 @@ const ogTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME;
 <meta property="og:url" content={SITE_URL} />
 
 <!-- Google Fonts -->
-<!-- TODO: add Playfair Display + DM Sans preconnect and stylesheet links -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap"
+/>
 
 <style is:global>
-  /* TODO: CSS custom properties, reset, focus styles, skip-nav */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
   :root {
     --font-serif: 'Playfair Display', Georgia, serif;
     --font-sans: 'DM Sans', system-ui, sans-serif;
@@ -35,5 +44,66 @@ const ogTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME;
     --color-text: #111111;
     --color-text-secondary: #888580;
     --color-accent: #111111;
+    --nav-height: 60px;
+  }
+
+  html {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 3px;
+  }
+
+  /* Visually hidden — skip nav resting state */
+  .skip-nav {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .skip-nav:focus-visible {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    width: auto;
+    height: auto;
+    z-index: 9999;
+    background: var(--color-text);
+    color: var(--color-bg);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    text-decoration: none;
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 </style>
