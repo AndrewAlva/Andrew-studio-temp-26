@@ -1,4 +1,3 @@
-// Singleton rAF loop — all scenes register callbacks here
 type RafCallback = (dt: number) => void;
 
 class RafManager {
@@ -8,27 +7,36 @@ class RafManager {
   private frameId = 0;
 
   constructor() {
-    // TODO: implement single rAF loop driving all registered callbacks with delta time
+    this.tick = this.tick.bind(this);
+    this.frameId = requestAnimationFrame(this.tick);
   }
 
   add(id: string, fn: RafCallback): void {
-    // TODO
+    this.callbacks.set(id, fn);
   }
 
   remove(id: string): void {
-    // TODO
+    this.callbacks.delete(id);
   }
 
   pause(): void {
-    // TODO
+    if (this.paused) return;
+    this.paused = true;
+    cancelAnimationFrame(this.frameId);
   }
 
   resume(): void {
-    // TODO
+    if (!this.paused) return;
+    this.paused = false;
+    this.lastTime = 0;
+    this.frameId = requestAnimationFrame(this.tick);
   }
 
   private tick(time: number): void {
-    // TODO: compute dt in seconds, call all callbacks, request next frame unless paused
+    const dt = this.lastTime ? Math.min((time - this.lastTime) / 1000, 0.1) : 0;
+    this.lastTime = time;
+    for (const fn of this.callbacks.values()) fn(dt);
+    this.frameId = requestAnimationFrame(this.tick);
   }
 }
 

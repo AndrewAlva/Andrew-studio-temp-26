@@ -7,14 +7,27 @@ const projects = (await getCollection('projects')).sort(
   (a, b) => a.data.order - b.data.order
 );
 const first = projects[0]?.data;
+
+// Serialise only the fields the Three.js scene needs
+const sceneProjects = projects.map((p) => ({
+  title:     p.data.title,
+  client:    p.data.client,
+  year:      p.data.year,
+  type:      p.data.type,
+  thumbnail: p.data.thumbnail,
+}));
 ---
 
 <Layout title="Work" description="Creative portfolio — projects by Andrew Studio.">
   <section class="canvas-section" aria-label="Interactive project viewer">
     <canvas id="glass-canvas" aria-hidden="true" tabindex="-1"></canvas>
 
+    <!-- Project data for the Three.js scene (read by client script) -->
+    <script id="scene-projects" type="application/json" set:html={JSON.stringify(sceneProjects)} />
+
+    <!-- Metadata overlay — initially server-rendered, then updated by scene -->
     <div class="project-overlay" aria-live="polite" aria-atomic="true">
-      <p class="overlay-title" data-project-title>{first?.title ?? ''}</p>
+      <p class="overlay-title"  data-project-title>{first?.title ?? ''}</p>
       <p class="overlay-client" data-project-client>{first?.client ?? ''}</p>
       <p class="overlay-meta">
         <span data-project-year>{first?.year ?? ''}</span>
@@ -52,6 +65,7 @@ const first = projects[0]?.data;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+    pointer-events: none;
   }
 
   .overlay-title {
@@ -94,7 +108,22 @@ const first = projects[0]?.data;
 </style>
 
 <script>
-  // TODO: init GlassCarouselScene once that file is implemented
-  // The overlay text will be updated by GlassCarouselScene.updateOverlay()
-  // which writes to [data-project-title], [data-project-client], etc.
+  import { GlassCarouselScene } from '../scenes/GlassCarouselScene';
+
+  const init = async () => {
+    const canvas  = document.getElementById('glass-canvas') as HTMLCanvasElement | null;
+    const dataEl  = document.getElementById('scene-projects');
+    if (!canvas || !dataEl) return;
+
+    const projects = JSON.parse(dataEl.textContent ?? '[]');
+    const scene = new GlassCarouselScene();
+    await scene.init(canvas, projects);
+  };
+
+  // Module scripts are deferred; DOMContentLoaded may have already fired
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>

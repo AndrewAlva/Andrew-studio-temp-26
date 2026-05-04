@@ -14,18 +14,17 @@ class SceneManager {
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    // false = don't override the canvas's CSS width/height
+    this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   }
 
   unmount(): void {
-    // TODO: dispose renderer
     this.renderer?.dispose();
     this.renderer = null;
   }
 
   resize(width: number, height: number): void {
-    // TODO: update renderer size; camera aspect is updated by each scene
-    this.renderer?.setSize(width, height);
+    this.renderer?.setSize(width, height, false);
   }
 }
 

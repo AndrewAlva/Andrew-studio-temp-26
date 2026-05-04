@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import gsap from 'gsap';
 import { sceneManager } from './SceneManager';
 import { raf } from '../utils/raf';
@@ -7,7 +8,7 @@ import { preloadAll, loadTexture } from '../utils/textureCache';
 import glassVert from '../shaders/glass.vert?raw';
 import glassFrag from '../shaders/glass.frag?raw';
 
-interface ProjectEntry {
+export interface ProjectEntry {
   title: string;
   client: string;
   year: number;
@@ -17,59 +18,269 @@ interface ProjectEntry {
 
 export class GlassCarouselScene {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  private camera: THREE.PerspectiveCamera;
   private glassMesh: THREE.Mesh | null = null;
   private backgroundPlane: THREE.Mesh | null = null;
   private planeMaterial: THREE.ShaderMaterial | null = null;
+
   private projects: ProjectEntry[] = [];
   private activeIndex = 0;
+
+  // Drag state
+  private isDragging = false;
+  private dragStartX = 0;
+  private rotationBase = 0;
   private rotationTarget = 0;
-  private rotationCurrent = 0;
-  private lastCrossing = 0;
+
   private canvas: HTMLCanvasElement | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private reducedMotion = false;
+
+  constructor() {
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    this.camera.position.z = 4;
+
+    this.tick = this.tick.bind(this);
+    this.onPointerDown = this.onPointerDown.bind(this);
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerUp = this.onPointerUp.bind(this);
+    this.onTouchStart = this.onTouchStart.bind(this);
+    this.onTouchMove = this.onTouchMove.bind(this);
+    this.onTouchEnd = this.onTouchEnd.bind(this);
+    this.onVisibilityChange = this.onVisibilityChange.bind(this);
+  }
 
   async init(canvas: HTMLCanvasElement, projects: ProjectEntry[]): Promise<void> {
-    // TODO:
-    // 1. sceneManager.mount(canvas)
-    // 2. Set up scene, camera, lights
-    // 3. Create RoundedBoxGeometry glass mesh with MeshPhysicalMaterial
-    // 4. Create PlaneGeometry background with ShaderMaterial (glass.vert / glass.frag)
-    // 5. Preload all thumbnails with preloadAll()
-    // 6. Set scene.background = new THREE.Color(0xffffff)
-    // 7. Bind pointer/touch events for drag rotation
-    // 8. Register resize handler
-    // 9. Register raf callback
-    // 10. Respect prefers-reduced-motion
     this.canvas = canvas;
     this.projects = projects;
-    console.log('TODO: GlassCarouselScene.init');
+    this.reducedMotion = prefersReducedMotion();
+
+    // ── Renderer ────────────────────────────────────────────────────────────
+    sceneManager.mount(canvas);
+    const renderer = sceneManager.renderer!;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
+    // ── Scene ────────────────────────────────────────────────────────────────
+    this.scene.background = new THREE.Color(0xffffff);
+    this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    this.camera.updateProjectionMatrix();
+
+    // ── Lights ───────────────────────────────────────────────────────────────
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight.position.set(3, 4, 5);
+    this.scene.add(dirLight);
+
+    // ── Textures ─────────────────────────────────────────────────────────────
+    const urls = projects.map((p) => p.thumbnail);
+    if (urls.length) await preloadAll(urls);
+    const firstTex = urls.length
+      ? await loadTexture(urls[0])
+      : new THREE.Texture();
+
+    // ── Background plane (custom ShaderMaterial) ──────────────────────────
+    this.planeMaterial = new THREE.ShaderMaterial({
+      vertexShader: glassVert,
+      fragmentShader: glassFrag,
+      uniforms: {
+        uTexA:       { value: firstTex },
+        uTexB:       { value: firstTex },
+        uBlend:      { value: 0.0 },
+        uDistortion: { value: 0.006 },
+      },
+    });
+    // Plane is slightly larger than the glass box (1.2 × 1.6)
+    const planeGeo = new THREE.PlaneGeometry(1.9, 2.5);
+    this.backgroundPlane = new THREE.Mesh(planeGeo, this.planeMaterial);
+    this.backgroundPlane.position.z = -0.3;
+    this.scene.add(this.backgroundPlane);
+
+    // ── Glass box (MeshPhysicalMaterial) ─────────────────────────────────
+    const glassGeo = new RoundedBoxGeometry(1.2, 1.6, 0.25, 4, 0.06);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      transmission: 0.95,
+      roughness: 0.05,
+      ior: 1.5,
+      thickness: 0.3,
+      transparent: true,
+      color: 0xffffff,
+    });
+    this.glassMesh = new THREE.Mesh(glassGeo, glassMat);
+    this.scene.add(this.glassMesh);
+
+    // ── Initial overlay ───────────────────────────────────────────────────
+    this.updateOverlay();
+
+    // ── Input events ──────────────────────────────────────────────────────
+    if (!this.reducedMotion) {
+      canvas.addEventListener('pointerdown', this.onPointerDown);
+      canvas.addEventListener('pointermove', this.onPointerMove);
+      canvas.addEventListener('pointerup', this.onPointerUp);
+      canvas.addEventListener('pointercancel', this.onPointerUp);
+      canvas.addEventListener('touchstart', this.onTouchStart, { passive: true });
+      canvas.addEventListener('touchmove', this.onTouchMove, { passive: true });
+      canvas.addEventListener('touchend', this.onTouchEnd);
+    }
+
+    // ── Resize ────────────────────────────────────────────────────────────
+    this.resizeObserver = new ResizeObserver(() => {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      sceneManager.resize(w, h);
+    });
+    this.resizeObserver.observe(canvas);
+
+    // ── Visibility / reduced-motion ───────────────────────────────────────
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    onMotionChange((reduced) => { this.reducedMotion = reduced; });
+
+    // ── Start loop ────────────────────────────────────────────────────────
+    raf.add('glass-carousel', this.tick);
   }
 
-  private advanceProject(): void {
-    // TODO: increment activeIndex (wrapping), swap planeMaterial textures, animate uBlend 0→1 over 400ms
+  // ── Visibility ────────────────────────────────────────────────────────────
+
+  private onVisibilityChange(): void {
+    document.hidden ? raf.pause() : raf.resume();
   }
 
-  private updateOverlay(): void {
-    // TODO: update DOM elements with data-project-* attributes from active project
+  // ── Pointer events (desktop) ──────────────────────────────────────────────
+
+  private onPointerDown(e: PointerEvent): void {
+    this.isDragging = true;
+    this.dragStartX = e.clientX;
+    this.rotationBase = this.rotationTarget;
+    (this.canvas as HTMLCanvasElement).setPointerCapture(e.pointerId);
   }
 
-  private onPointerDown(_e: PointerEvent): void {
-    // TODO
-  }
-
-  private onPointerMove(_e: PointerEvent): void {
-    // TODO: accumulate drag delta; use gsap.to to lerp rotation
+  private onPointerMove(e: PointerEvent): void {
+    if (!this.isDragging || !this.canvas) return;
+    this.applyDrag(e.clientX);
   }
 
   private onPointerUp(_e: PointerEvent): void {
-    // TODO
+    this.isDragging = false;
   }
+
+  // ── Touch events (mobile) ─────────────────────────────────────────────────
+
+  private onTouchStart(e: TouchEvent): void {
+    if (e.touches.length !== 1) return;
+    this.isDragging = true;
+    this.dragStartX = e.touches[0].clientX;
+    this.rotationBase = this.rotationTarget;
+  }
+
+  private onTouchMove(e: TouchEvent): void {
+    if (!this.isDragging || e.touches.length !== 1) return;
+    this.applyDrag(e.touches[0].clientX);
+  }
+
+  private onTouchEnd(_e: TouchEvent): void {
+    this.isDragging = false;
+  }
+
+  // ── Drag logic ────────────────────────────────────────────────────────────
+
+  private applyDrag(currentX: number): void {
+    if (!this.canvas) return;
+    // Full viewport width = one full rotation (2π)
+    const sensitivity = (Math.PI * 2) / this.canvas.clientWidth;
+    const newTarget = this.rotationBase + (currentX - this.dragStartX) * sensitivity;
+
+    this.checkCrossings(this.rotationTarget, newTarget);
+    this.rotationTarget = newTarget;
+
+    gsap.to(this.glassMesh!.rotation, {
+      y: this.rotationTarget,
+      duration: 0.9,
+      ease: 'power2.out',
+      overwrite: true,
+    });
+  }
+
+  // ── Project switching ─────────────────────────────────────────────────────
+
+  private checkCrossings(from: number, to: number): void {
+    const prevN = Math.floor(from / Math.PI);
+    const nextN = Math.floor(to / Math.PI);
+    const count = Math.abs(nextN - prevN);
+    for (let i = 0; i < count; i++) this.advanceProject();
+  }
+
+  private advanceProject(): void {
+    if (this.projects.length <= 1 || !this.planeMaterial) return;
+    this.activeIndex = (this.activeIndex + 1) % this.projects.length;
+    const next = this.projects[this.activeIndex];
+
+    loadTexture(next.thumbnail).then((tex) => {
+      if (!this.planeMaterial) return;
+      // texA stays as current; texB fades in
+      this.planeMaterial.uniforms.uTexB.value = tex;
+      this.planeMaterial.uniforms.uBlend.value = 0;
+
+      gsap.to(this.planeMaterial.uniforms.uBlend, {
+        value: 1,
+        duration: 0.4,
+        ease: 'power1.inOut',
+        onComplete: () => {
+          if (!this.planeMaterial) return;
+          // Commit incoming as the new base
+          this.planeMaterial.uniforms.uTexA.value = tex;
+          this.planeMaterial.uniforms.uBlend.value = 0;
+        },
+      });
+    });
+
+    this.updateOverlay();
+  }
+
+  private updateOverlay(): void {
+    const p = this.projects[this.activeIndex];
+    if (!p) return;
+    const sel = (attr: string) =>
+      document.querySelector(`[data-project-${attr}]`) as HTMLElement | null;
+    const t = sel('title');
+    const c = sel('client');
+    const y = sel('year');
+    const ty = sel('type');
+    if (t) t.textContent = p.title;
+    if (c) c.textContent = p.client;
+    if (y) y.textContent = String(p.year);
+    if (ty) ty.textContent = p.type;
+  }
+
+  // ── Render loop ───────────────────────────────────────────────────────────
 
   private tick(_dt: number): void {
-    // TODO: render scene; check rotation crossings to advance project
+    sceneManager.renderer?.render(this.scene, this.camera);
   }
 
+  // ── Cleanup ───────────────────────────────────────────────────────────────
+
   destroy(): void {
-    // TODO: raf.remove, dispose geometries/materials/textures, unmount
+    raf.remove('glass-carousel');
+    this.resizeObserver?.disconnect();
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+
+    if (this.canvas) {
+      this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+      this.canvas.removeEventListener('pointermove', this.onPointerMove);
+      this.canvas.removeEventListener('pointerup', this.onPointerUp);
+      this.canvas.removeEventListener('pointercancel', this.onPointerUp);
+      this.canvas.removeEventListener('touchstart', this.onTouchStart);
+      this.canvas.removeEventListener('touchmove', this.onTouchMove);
+      this.canvas.removeEventListener('touchend', this.onTouchEnd);
+    }
+
+    this.glassMesh?.geometry.dispose();
+    (this.glassMesh?.material as THREE.Material | undefined)?.dispose();
+    this.backgroundPlane?.geometry.dispose();
+    this.planeMaterial?.dispose();
+    sceneManager.unmount();
   }
 }

@@ -1,9 +1,9 @@
-// prefers-reduced-motion helpers
 export function prefersReducedMotion(): boolean {
-  // TODO: return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export function onMotionChange(cb: (reduced: boolean) => void): void {
-  // TODO: register MediaQueryList 'change' listener; call cb with new state
+  window
+    .matchMedia('(prefers-reduced-motion: reduce)')
+    .addEventListener('change', (e) => cb(e.matches));
 }

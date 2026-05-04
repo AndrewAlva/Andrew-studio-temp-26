@@ -1,22 +1,21 @@
-// Fragment shader: crossfade two textures with chromatic-aberration UV distortion
-// TODO: implement full logic
-
 precision highp float;
 
 uniform sampler2D uTexA;
 uniform sampler2D uTexB;
-uniform float uBlend;      // 0–1 crossfade between texA and texB
-uniform float uDistortion; // default 0.02 — chromatic aberration spread
+uniform float uBlend;
+uniform float uDistortion;
 
 varying vec2 vUv;
 
 void main() {
-  // TODO:
-  // 1. Sample uTexA with per-channel UV offset (R: +uDistortion, G: 0, B: -uDistortion)
-  // 2. Sample uTexB at plain vUv
-  // 3. mix(texA, texB, uBlend) for crossfade output
+  // Chromatic aberration on the outgoing texture:
+  // offset R and B channels horizontally in opposite directions
+  float r = texture2D(uTexA, vUv + vec2(uDistortion, 0.0)).r;
+  float g = texture2D(uTexA, vUv).g;
+  float b = texture2D(uTexA, vUv - vec2(uDistortion, 0.0)).b;
+  vec4 texA = vec4(r, g, b, 1.0);
 
-  vec4 texA = texture2D(uTexA, vUv);
   vec4 texB = texture2D(uTexB, vUv);
+
   gl_FragColor = mix(texA, texB, uBlend);
 }
