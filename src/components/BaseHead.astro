@@ -1,0 +1,39 @@
+---
+import { SITE_NAME, SITE_URL } from '../config/site';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const ogTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME;
+// TODO: implement full BaseHead with Google Fonts, CSS custom properties, and reset
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{ogTitle}</title>
+<meta name="description" content={description} />
+
+<!-- Open Graph -->
+<meta property="og:title" content={ogTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content="website" />
+<meta property="og:url" content={SITE_URL} />
+
+<!-- Google Fonts -->
+<!-- TODO: add Playfair Display + DM Sans preconnect and stylesheet links -->
+
+<style is:global>
+  /* TODO: CSS custom properties, reset, focus styles, skip-nav */
+  :root {
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+    --color-bg: #ffffff;
+    --color-surface: #f5f3ee;
+    --color-text: #111111;
+    --color-text-secondary: #888580;
+    --color-accent: #111111;
+  }
+</style>

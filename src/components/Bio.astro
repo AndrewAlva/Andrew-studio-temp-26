@@ -1,0 +1,16 @@
+---
+interface Props {
+  bio: string;
+}
+
+const { bio } = Astro.props;
+// TODO: implement Bio — large serif display text, max-width 900px
+---
+
+<section class="bio" aria-label="Biography">
+  <p class="bio-text">{bio}</p>
+</section>
+
+<style>
+  /* TODO: clamp(40px, 6vw, 80px) font-size, --font-serif, max-width 900px */
+</style>

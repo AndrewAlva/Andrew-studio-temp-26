@@ -1,0 +1,34 @@
+---
+import { SITE_NAME } from '../config/site';
+// TODO: implement Nav — sticky, skip-nav, site name, Home/About links, contact button
+---
+
+<a class="skip-nav" href="#main-content">Skip to content</a>
+
+<nav aria-label="Main navigation">
+  <a href="/" class="site-name" aria-label={SITE_NAME}>
+    <!-- TODO: site name in --font-serif italic -->
+    {SITE_NAME}
+  </a>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li>
+      <button
+        id="contact-open-btn"
+        aria-label="Open contact form"
+        type="button"
+      >
+        Contact
+      </button>
+    </li>
+  </ul>
+</nav>
+
+<style>
+  /* TODO: sticky nav styles */
+</style>
+
+<script>
+  // TODO: wire button to modal.ts showModal()
+</script>

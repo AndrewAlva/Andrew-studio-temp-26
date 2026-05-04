@@ -1,0 +1,22 @@
+---
+interface Props {
+  src: string;
+  type: 'image' | 'video';
+  alt: string;
+}
+
+const { src, type, alt } = Astro.props;
+// TODO: implement MediaThumb — img vs video, 16/9 aspect, object-fit cover
+---
+
+<div class="media-thumb">
+  {type === 'image' ? (
+    <img src={src} alt={alt} loading="lazy" decoding="async" />
+  ) : (
+    <video src={src} autoplay muted loop playsinline aria-label={alt} />
+  )}
+</div>
+
+<style>
+  /* TODO: aspect-ratio 16/9, object-fit cover */
+</style>

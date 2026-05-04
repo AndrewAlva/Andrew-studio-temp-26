@@ -1,0 +1,30 @@
+---
+interface Award {
+  year: number;
+  award: string;
+  project: string;
+}
+
+interface Props {
+  awards: Award[];
+}
+
+const { awards } = Astro.props;
+// TODO: implement Awards — year | award name | project name, horizontal rules
+---
+
+<section class="awards" aria-label="Awards">
+  <dl class="awards-list">
+    {awards.map(({ year, award, project }) => (
+      <div class="award-row">
+        <dt class="award-year">{year}</dt>
+        <dd class="award-name">{award}</dd>
+        <dd class="award-project">{project}</dd>
+      </div>
+    ))}
+  </dl>
+</section>
+
+<style>
+  /* TODO: table-like layout, thin horizontal rules, muted year + italic project */
+</style>

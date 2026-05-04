@@ -1,0 +1,38 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProjectShowcase from '../components/ProjectShowcase.astro';
+// TODO: import GlassCarouselScene init logic
+---
+
+<Layout title="Work" description="Creative portfolio — projects by Andrew Studio.">
+  <!-- 3D Canvas section -->
+  <section class="canvas-section" aria-label="Interactive project viewer">
+    <canvas
+      id="glass-canvas"
+      aria-hidden="true"
+      tabindex="-1"
+    ></canvas>
+
+    <!-- Project metadata overlay (updated via JS) -->
+    <div class="project-overlay" aria-live="polite">
+      <p
+        class="overlay-title"
+        data-project-title
+      ></p>
+      <p class="overlay-client" data-project-client></p>
+      <p class="overlay-year" data-project-year></p>
+      <p class="overlay-type" data-project-type></p>
+    </div>
+  </section>
+
+  <!-- Accessible project grid -->
+  <ProjectShowcase />
+</Layout>
+
+<style>
+  /* TODO: canvas section full viewport, overlay positioning */
+</style>
+
+<script>
+  // TODO: import SceneManager, GlassCarouselScene; init on DOMContentLoaded
+</script>

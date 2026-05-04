@@ -1,0 +1,38 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Bio from '../components/Bio.astro';
+import Approach from '../components/Approach.astro';
+import ProjectTypes from '../components/ProjectTypes.astro';
+import Clients from '../components/Clients.astro';
+import Awards from '../components/Awards.astro';
+import { getEntry } from 'astro:content';
+
+const aboutEntry = await getEntry('about', 'index');
+const { bio, approach, projectTypes, clients, awards } = aboutEntry!.data;
+// TODO: import WindowScene init logic
+---
+
+<Layout title="About" description="About Andrew Studio — creative director and designer.">
+  <!-- 3D Canvas section -->
+  <section class="canvas-section" aria-label="Time-of-day window view">
+    <canvas
+      id="window-canvas"
+      aria-hidden="true"
+      tabindex="-1"
+    ></canvas>
+  </section>
+
+  <Bio bio={bio} />
+  <Approach paragraphs={approach} />
+  <ProjectTypes types={projectTypes} />
+  <Clients clients={clients} />
+  <Awards awards={awards} />
+</Layout>
+
+<style>
+  /* TODO: canvas section full viewport */
+</style>
+
+<script>
+  // TODO: import SceneManager, WindowScene; init on DOMContentLoaded
+</script>

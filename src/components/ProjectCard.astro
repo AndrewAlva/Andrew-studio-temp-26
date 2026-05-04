@@ -1,0 +1,26 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import MediaThumb from './MediaThumb.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { title, client, year, type, thumbnail, thumbnailType, thumbnailAlt } = project.data;
+// TODO: implement ProjectCard layout — thumb + metadata
+---
+
+<article class="project-card">
+  <MediaThumb src={thumbnail} type={thumbnailType} alt={thumbnailAlt} />
+  <div class="project-meta">
+    <h3 class="project-title">{title}</h3>
+    <span class="project-client">{client}</span>
+    <span class="project-year">{year}</span>
+    <span class="project-type">{type}</span>
+  </div>
+</article>
+
+<style>
+  /* TODO: card styles */
+</style>

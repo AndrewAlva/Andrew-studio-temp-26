@@ -1,0 +1,18 @@
+---
+interface Props {
+  paragraphs: string[];
+}
+
+const { paragraphs } = Astro.props;
+// TODO: implement Approach — body paragraphs, DM Sans, max-width 680px
+---
+
+<section class="approach" aria-label="Approach">
+  {paragraphs.map((para) => (
+    <p class="approach-para">{para}</p>
+  ))}
+</section>
+
+<style>
+  /* TODO: --font-sans, 16-18px, line-height 1.65, max-width 680px */
+</style>

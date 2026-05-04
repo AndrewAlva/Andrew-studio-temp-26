@@ -1,0 +1,28 @@
+---
+interface Client {
+  name: string;
+  year?: number;
+}
+
+interface Props {
+  clients: Client[];
+}
+
+const { clients } = Astro.props;
+// TODO: implement Clients — flowing wrap list, DM Sans medium 24px, optional year label
+---
+
+<section class="clients" aria-label="Clients">
+  <ul class="clients-list">
+    {clients.map(({ name, year }) => (
+      <li class="client-item">
+        <span class="client-name">{name}</span>
+        {year && <span class="client-year">{year}</span>}
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  /* TODO: flex wrap, --font-sans medium, 24px name, label-style year */
+</style>

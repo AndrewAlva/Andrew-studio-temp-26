@@ -1,0 +1,18 @@
+---
+interface Props {
+  types: string[];
+}
+
+const { types } = Astro.props;
+// TODO: implement ProjectTypes — display-size serif italic labels
+---
+
+<section class="project-types" aria-label="Project types">
+  {types.map((type) => (
+    <span class="type-label">{type}</span>
+  ))}
+</section>
+
+<style>
+  /* TODO: --font-serif italic, display size, stacked with generous spacing */
+</style>
