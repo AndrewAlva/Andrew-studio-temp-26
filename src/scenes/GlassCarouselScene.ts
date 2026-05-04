@@ -206,10 +206,16 @@ export class GlassCarouselScene {
   // ── Project switching ─────────────────────────────────────────────────────
 
   private checkCrossings(from: number, to: number): void {
-    const prevN = Math.floor(from / Math.PI);
-    const nextN = Math.floor(to / Math.PI);
-    const delta = nextN - prevN; // positive = dragged right, negative = dragged left
-    const direction = delta > 0 ? 1 : -1;
+    // Trigger at 90°, 270°, 450°… (and −90°, −270°…) — every π, offset by π/2.
+    // floor((r + π/2) / π) increments at those exact points in both directions.
+    const HALF_PI = Math.PI / 2;
+    const prevN = Math.floor((from + HALF_PI) / Math.PI);
+    const nextN = Math.floor((to   + HALF_PI) / Math.PI);
+    const delta = nextN - prevN;
+    if (delta === 0) return;
+    // Inverted: spinning right (positive delta) → previous project
+    //           spinning left  (negative delta) → next project
+    const direction = delta > 0 ? -1 : 1;
     for (let i = 0; i < Math.abs(delta); i++) this.advanceProject(direction);
   }
 
