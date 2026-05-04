@@ -80,7 +80,7 @@ export class GlassCarouselScene {
       ? await loadTexture(urls[0])
       : new THREE.Texture();
 
-    // ── Background plane (custom ShaderMaterial) ──────────────────────────
+    // ── Background plane (16:9 landscape, custom ShaderMaterial) ──────────
     this.planeMaterial = new THREE.ShaderMaterial({
       vertexShader: glassVert,
       fragmentShader: glassFrag,
@@ -91,14 +91,14 @@ export class GlassCarouselScene {
         uDistortion: { value: 0.006 },
       },
     });
-    // Plane is slightly larger than the glass box (1.2 × 1.6)
-    const planeGeo = new THREE.PlaneGeometry(1.9, 2.5);
+    // 16:9 plane, slightly larger than the glass box so it fills the view
+    const planeGeo = new THREE.PlaneGeometry(2.84, 1.6); // 2.84 / 1.6 ≈ 16/9
     this.backgroundPlane = new THREE.Mesh(planeGeo, this.planeMaterial);
     this.backgroundPlane.position.z = -0.3;
     this.scene.add(this.backgroundPlane);
 
-    // ── Glass box (MeshPhysicalMaterial) ─────────────────────────────────
-    const glassGeo = new RoundedBoxGeometry(1.2, 1.6, 0.25, 4, 0.06);
+    // ── Glass box (4:3 landscape, MeshPhysicalMaterial) ──────────────────
+    const glassGeo = new RoundedBoxGeometry(1.8, 1.35, 0.15, 4, 0.05); // 1.8/1.35 = 4/3
     const glassMat = new THREE.MeshPhysicalMaterial({
       transmission: 0.95,
       roughness: 0.05,
@@ -208,13 +208,15 @@ export class GlassCarouselScene {
   private checkCrossings(from: number, to: number): void {
     const prevN = Math.floor(from / Math.PI);
     const nextN = Math.floor(to / Math.PI);
-    const count = Math.abs(nextN - prevN);
-    for (let i = 0; i < count; i++) this.advanceProject();
+    const delta = nextN - prevN; // positive = dragged right, negative = dragged left
+    const direction = delta > 0 ? 1 : -1;
+    for (let i = 0; i < Math.abs(delta); i++) this.advanceProject(direction);
   }
 
-  private advanceProject(): void {
+  private advanceProject(direction: 1 | -1 = 1): void {
     if (this.projects.length <= 1 || !this.planeMaterial) return;
-    this.activeIndex = (this.activeIndex + 1) % this.projects.length;
+    this.activeIndex =
+      (this.activeIndex + direction + this.projects.length) % this.projects.length;
     const next = this.projects[this.activeIndex];
 
     loadTexture(next.thumbnail).then((tex) => {
@@ -258,6 +260,14 @@ export class GlassCarouselScene {
 
   private tick(_dt: number): void {
     sceneManager.renderer?.render(this.scene, this.camera);
+    this.updateRotationCounter();
+  }
+
+  private updateRotationCounter(): void {
+    const el = document.getElementById('rotation-counter');
+    if (!el || !this.glassMesh) return;
+    const deg = Math.round(this.glassMesh.rotation.y * (180 / Math.PI));
+    el.textContent = `${deg}°`;
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────────

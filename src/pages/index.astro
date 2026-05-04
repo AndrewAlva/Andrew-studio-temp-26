@@ -35,6 +35,9 @@ const sceneProjects = projects.map((p) => ({
         <span data-project-type>{first?.type ?? ''}</span>
       </p>
     </div>
+
+    <!-- Rotation debug counter (bottom-right) -->
+    <div class="rotation-counter" id="rotation-counter" aria-hidden="true">0°</div>
   </section>
 
   <ProjectShowcase />
@@ -99,10 +102,29 @@ const sceneProjects = projects.map((p) => ({
     opacity: 0.35;
   }
 
+  .rotation-counter {
+    position: absolute;
+    bottom: 2.5rem;
+    right: 2.5rem;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    user-select: none;
+  }
+
   @media (max-width: 640px) {
     .project-overlay {
       bottom: 1.5rem;
       left: 1.25rem;
+    }
+
+    .rotation-counter {
+      bottom: 1.5rem;
+      right: 1.25rem;
     }
   }
 </style>
