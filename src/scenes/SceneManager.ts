@@ -11,6 +11,7 @@ class SceneManager {
       canvas,
       antialias: true,
       alpha: false,
+      stencil: true, // explicit — default changed to false in Three.js r152+
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

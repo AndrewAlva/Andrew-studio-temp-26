@@ -131,10 +131,17 @@ export class GlassCarouselScene {
       this.stencilMask.renderOrder = 0;
       this.glassMesh.add(this.stencilMask);
 
-      // Plane only renders where stencil = 1 (inside the glass silhouette)
-      this.planeMaterial.stencilWrite = false;
+      // Plane only renders where stencil = 1 (inside the glass silhouette).
+      // stencilWrite must be TRUE for Three.js to enable the stencil test at all —
+      // it is the master switch for all stencil operations, not just writes.
+      // stencilWriteMask: 0x00 prevents any actual modification of the buffer.
+      this.planeMaterial.stencilWrite = true;
+      this.planeMaterial.stencilWriteMask = 0x00;
       this.planeMaterial.stencilRef = 1;
       this.planeMaterial.stencilFunc = THREE.EqualStencilFunc;
+      this.planeMaterial.stencilFail = THREE.KeepStencilOp;
+      this.planeMaterial.stencilZFail = THREE.KeepStencilOp;
+      this.planeMaterial.stencilZPass = THREE.KeepStencilOp;
       this.backgroundPlane!.renderOrder = 1;
 
       // Glass renders on top of the plane
