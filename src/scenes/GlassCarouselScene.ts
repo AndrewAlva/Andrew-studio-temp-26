@@ -95,13 +95,14 @@ export class GlassCarouselScene {
         uTexA:       { value: firstTex },
         uTexB:       { value: firstTex },
         uBlend:      { value: 0.0 },
-        uDistortion: { value: 0.006 },
+        uDistortion: { value: 0.000 }, // refraction distortion strength; tweak for more/less warping of the image under the glass
       },
     });
     // 16:9 plane, slightly larger than the glass box so it fills the view
     const planeGeo = new THREE.PlaneGeometry(2.84, 1.6); // 2.84 / 1.6 ≈ 16/9
     this.backgroundPlane = new THREE.Mesh(planeGeo, this.planeMaterial);
     this.backgroundPlane.position.z = -0.3;
+    this.backgroundPlane.scale.setScalar(1.5);
     this.scene.add(this.backgroundPlane);
 
     // ── Glass box (4:3 landscape, MeshPhysicalMaterial) ──────────────────
