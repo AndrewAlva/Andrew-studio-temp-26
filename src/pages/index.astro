@@ -131,7 +131,7 @@ const sceneProjects = projects.map((p) => ({
 
 <script>
   import { GlassCarouselScene } from '../scenes/GlassCarouselScene';
-  import { isDebugMode, DebugPanel } from '../utils/debug';
+  import { isDebugMode } from '../utils/debug';
 
   const init = async () => {
     const canvas  = document.getElementById('glass-canvas') as HTMLCanvasElement | null;
@@ -139,15 +139,39 @@ const sceneProjects = projects.map((p) => ({
     if (!canvas || !dataEl) return;
 
     const projects = JSON.parse(dataEl.textContent ?? '[]');
-    const scene = new GlassCarouselScene();
-    await scene.init(canvas, projects);
+    const carouselScene = new GlassCarouselScene();
+    await carouselScene.init(canvas, projects);
 
     if (isDebugMode()) {
-      const { renderer, scene: threeScene } = scene.getDebugInfo();
-      if (renderer) {
-        const panel = new DebugPanel(renderer, threeScene);
-        scene.setTickCallback((jsMs) => panel.update(jsMs));
-      }
+      const { default: Stats } = await import('stats-gl');
+      const stats = new Stats({
+        trackGPU: true,
+        trackHz: true,
+        trackCPT: false,
+        logsPerSecond: 20,
+        graphsPerSecond: 60,
+        samplesLog: 40,
+        samplesGraph: 60,
+        precision: 2,
+        minimal: false,
+        horizontal: true,
+      });
+
+      // Position at top-right (stats-gl defaults to top-left)
+      Object.assign(stats.dom.style, {
+        position: 'fixed',
+        top: '0',
+        right: '0',
+        left: 'auto',
+        zIndex: '9999',
+      });
+      document.body.appendChild(stats.dom);
+
+      // Pass the Three.js renderer so stats-gl can hook GPU timing queries
+      const glRenderer = carouselScene.getRenderer();
+      if (glRenderer) await stats.init(glRenderer);
+
+      carouselScene.setStats(stats);
     }
   };
 

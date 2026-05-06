@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import gsap from 'gsap';
+import type Stats from 'stats-gl';
 import { sceneManager } from './SceneManager';
 import { raf } from '../utils/raf';
 import { prefersReducedMotion, onMotionChange } from '../utils/motion';
@@ -39,7 +40,7 @@ export class GlassCarouselScene {
   private canvas: HTMLCanvasElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private reducedMotion = false;
-  private onTickCallback?: (jsMs: number) => void;
+  private stats: Stats | null = null;
 
   constructor() {
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -303,21 +304,22 @@ export class GlassCarouselScene {
 
   // ── Debug helpers ─────────────────────────────────────────────────────────
 
-  setTickCallback(cb: (jsMs: number) => void): void {
-    this.onTickCallback = cb;
+  setStats(stats: Stats | null): void {
+    this.stats = stats;
   }
 
-  getDebugInfo(): { scene: THREE.Scene; renderer: THREE.WebGLRenderer | null } {
-    return { scene: this.scene, renderer: sceneManager.renderer };
+  getRenderer(): THREE.WebGLRenderer | null {
+    return sceneManager.renderer;
   }
 
   // ── Render loop ───────────────────────────────────────────────────────────
 
   private tick(_dt: number): void {
-    const t0 = performance.now();
+    this.stats?.begin();
     sceneManager.renderer?.render(this.scene, this.camera);
+    this.stats?.end();
+    this.stats?.update();
     this.updateRotationCounter();
-    if (this.onTickCallback) this.onTickCallback(performance.now() - t0);
   }
 
   private updateRotationCounter(): void {
