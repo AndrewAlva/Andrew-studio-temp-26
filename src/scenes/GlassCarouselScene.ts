@@ -31,11 +31,14 @@ export class GlassCarouselScene {
   private projects: ProjectEntry[] = [];
   private activeIndex = 0;
 
-  // Drag state
+  // Drag / inertia — tweak FRICTION to taste:
+  // 0 = instant snap, 0.9 = very slidey, values around 0.82–0.88 feel good
+  private static readonly FRICTION = 0.85;
   private isDragging = false;
   private dragStartX = 0;
-  private rotationBase = 0;
-  private rotationTarget = 0;
+  private rotationBase = 0;   // target value at the moment the drag began
+  private rotationTarget = 0; // where the drag is pointing right now
+  private rotationCurrent = 0; // what the mesh is actually rendered at
 
   private canvas: HTMLCanvasElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -195,7 +198,7 @@ export class GlassCarouselScene {
   private onPointerDown(e: PointerEvent): void {
     this.isDragging = true;
     this.dragStartX = e.clientX;
-    this.rotationBase = this.rotationTarget;
+    this.rotationBase = this.rotationCurrent; // anchor to what's visually there
     (this.canvas as HTMLCanvasElement).setPointerCapture(e.pointerId);
   }
 
@@ -214,7 +217,7 @@ export class GlassCarouselScene {
     if (e.touches.length !== 1) return;
     this.isDragging = true;
     this.dragStartX = e.touches[0].clientX;
-    this.rotationBase = this.rotationTarget;
+    this.rotationBase = this.rotationCurrent; // anchor to what's visually there
   }
 
   private onTouchMove(e: TouchEvent): void {
@@ -236,13 +239,7 @@ export class GlassCarouselScene {
 
     this.checkCrossings(this.rotationTarget, newTarget);
     this.rotationTarget = newTarget;
-
-    gsap.to(this.glassMesh!.rotation, {
-      y: this.rotationTarget,
-      duration: 0.9,
-      ease: 'power2.out',
-      overwrite: true,
-    });
+    // Mesh chases rotationTarget each tick via friction lerp — no animation needed here
   }
 
   // ── Project switching ─────────────────────────────────────────────────────
@@ -325,12 +322,19 @@ export class GlassCarouselScene {
   // ── Render loop ───────────────────────────────────────────────────────────
 
   private tick(dt: number): void {
+    // Friction-based lerp — frame-rate independent via Math.pow normalisation.
+    // FRICTION is the fraction of distance kept per frame at 60 fps;
+    // Math.pow spreads it correctly across any dt so 30/60/120 Hz all feel alike.
+    if (this.glassMesh) {
+      const alpha = 1 - Math.pow(GlassCarouselScene.FRICTION, dt * 60);
+      this.rotationCurrent += (this.rotationTarget - this.rotationCurrent) * alpha;
+      this.glassMesh.rotation.y = this.rotationCurrent;
+    }
+
     this.stats?.begin();
     sceneManager.renderer?.render(this.scene, this.camera);
     this.stats?.end();
     this.stats?.update();
-    // Pass wall-clock frame time so FPS reflects actual display cadence,
-    // not just how fast renderer.render() returns on the CPU.
     this.onTickCallback?.(dt * 1000);
     this.updateRotationCounter();
   }
