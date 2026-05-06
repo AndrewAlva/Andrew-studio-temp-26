@@ -131,6 +131,7 @@ const sceneProjects = projects.map((p) => ({
 
 <script>
   import { GlassCarouselScene } from '../scenes/GlassCarouselScene';
+  import { isDebugMode, DebugPanel } from '../utils/debug';
 
   const init = async () => {
     const canvas  = document.getElementById('glass-canvas') as HTMLCanvasElement | null;
@@ -140,6 +141,14 @@ const sceneProjects = projects.map((p) => ({
     const projects = JSON.parse(dataEl.textContent ?? '[]');
     const scene = new GlassCarouselScene();
     await scene.init(canvas, projects);
+
+    if (isDebugMode()) {
+      const { renderer, scene: threeScene } = scene.getDebugInfo();
+      if (renderer) {
+        const panel = new DebugPanel(renderer, threeScene);
+        scene.setTickCallback((jsMs) => panel.update(jsMs));
+      }
+    }
   };
 
   // Module scripts are deferred; DOMContentLoaded may have already fired
