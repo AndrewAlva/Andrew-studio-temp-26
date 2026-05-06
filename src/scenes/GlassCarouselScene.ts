@@ -323,14 +323,14 @@ export class GlassCarouselScene {
 
   // ── Render loop ───────────────────────────────────────────────────────────
 
-  private tick(_dt: number): void {
-    const t0 = performance.now();
+  private tick(dt: number): void {
     this.stats?.begin();
     sceneManager.renderer?.render(this.scene, this.camera);
     this.stats?.end();
     this.stats?.update();
-    // Measure after renderer.render() so renderer.info counts are final
-    this.onTickCallback?.(performance.now() - t0);
+    // Pass wall-clock frame time so FPS reflects actual display cadence,
+    // not just how fast renderer.render() returns on the CPU.
+    this.onTickCallback?.(dt * 1000);
     this.updateRotationCounter();
   }
 

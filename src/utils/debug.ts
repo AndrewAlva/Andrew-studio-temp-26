@@ -71,7 +71,7 @@ export class DebugPanel {
       `<span style="color:#555;font-size:9px;letter-spacing:.1em;text-transform:uppercase">Three.js Debug</span>`,
       `<span style="color:#555">──────────────────</span>`,
       `FPS      <span style="color:${fpsCol};font-weight:600">${fps.toFixed(1)}</span>`,
-      `Render   <span style="color:${msCol};font-weight:600">${avgMs.toFixed(2)} ms</span>`,
+      `Frame    <span style="color:${msCol};font-weight:600">${avgMs.toFixed(2)} ms</span>`,
       `<span style="color:#555">──────────────────</span>`,
       `Calls    <span style="font-weight:600">${calls}</span>`,
       `Tris     <span style="color:${triCol};font-weight:600">${tris.toLocaleString()}</span>`,
