@@ -18,7 +18,7 @@ export interface ProjectEntry {
 }
 
 // Toggle stencil clipping: true = plane only visible through glass silhouette
-const USE_STENCIL_MASK = true;
+const USE_STENCIL_MASK = false;
 
 export class GlassCarouselScene {
   private scene = new THREE.Scene();
@@ -101,8 +101,8 @@ export class GlassCarouselScene {
     // 16:9 plane, slightly larger than the glass box so it fills the view
     const planeGeo = new THREE.PlaneGeometry(2.84, 1.6); // 2.84 / 1.6 ≈ 16/9
     this.backgroundPlane = new THREE.Mesh(planeGeo, this.planeMaterial);
-    this.backgroundPlane.position.z = -0.3;
-    this.backgroundPlane.scale.setScalar(1.5);
+    this.backgroundPlane.position.z = -1;
+    this.backgroundPlane.scale.setScalar(1.3);
     this.scene.add(this.backgroundPlane);
 
     // ── Glass box (4:3 landscape, MeshPhysicalMaterial) ──────────────────
