@@ -16,12 +16,16 @@ export interface ProjectEntry {
   thumbnail: string;
 }
 
+// Toggle stencil clipping: true = plane only visible through glass silhouette
+const USE_STENCIL_MASK = true;
+
 export class GlassCarouselScene {
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
   private glassMesh: THREE.Mesh | null = null;
   private backgroundPlane: THREE.Mesh | null = null;
   private planeMaterial: THREE.ShaderMaterial | null = null;
+  private stencilMask: THREE.Mesh | null = null;
 
   private projects: ProjectEntry[] = [];
   private activeIndex = 0;
@@ -109,6 +113,33 @@ export class GlassCarouselScene {
     });
     this.glassMesh = new THREE.Mesh(glassGeo, glassMat);
     this.scene.add(this.glassMesh);
+
+    // ── Stencil mask ──────────────────────────────────────────────────────
+    if (USE_STENCIL_MASK) {
+      // Invisible mesh with the same silhouette as the glass.
+      // Added as a child so it inherits the glass's Y rotation automatically.
+      // renderOrder 0 → writes stencil first, before the plane (1) and glass (2).
+      const maskMat = new THREE.MeshBasicMaterial({
+        colorWrite: false,
+        depthWrite: false,
+        stencilWrite: true,
+        stencilRef: 1,
+        stencilFunc: THREE.AlwaysStencilFunc,
+        stencilZPass: THREE.ReplaceStencilOp,
+      });
+      this.stencilMask = new THREE.Mesh(glassGeo, maskMat); // shares geometry
+      this.stencilMask.renderOrder = 0;
+      this.glassMesh.add(this.stencilMask);
+
+      // Plane only renders where stencil = 1 (inside the glass silhouette)
+      this.planeMaterial.stencilWrite = false;
+      this.planeMaterial.stencilRef = 1;
+      this.planeMaterial.stencilFunc = THREE.EqualStencilFunc;
+      this.backgroundPlane!.renderOrder = 1;
+
+      // Glass renders on top of the plane
+      this.glassMesh.renderOrder = 2;
+    }
 
     // ── Initial overlay ───────────────────────────────────────────────────
     this.updateOverlay();
@@ -295,6 +326,7 @@ export class GlassCarouselScene {
 
     this.glassMesh?.geometry.dispose();
     (this.glassMesh?.material as THREE.Material | undefined)?.dispose();
+    (this.stencilMask?.material as THREE.Material | undefined)?.dispose();
     this.backgroundPlane?.geometry.dispose();
     this.planeMaterial?.dispose();
     sceneManager.unmount();
