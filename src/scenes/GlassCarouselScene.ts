@@ -41,6 +41,7 @@ export class GlassCarouselScene {
   private resizeObserver: ResizeObserver | null = null;
   private reducedMotion = false;
   private stats: Stats | null = null;
+  private onTickCallback?: (jsMs: number) => void;
 
   constructor() {
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -308,17 +309,28 @@ export class GlassCarouselScene {
     this.stats = stats;
   }
 
+  setTickCallback(cb: (jsMs: number) => void): void {
+    this.onTickCallback = cb;
+  }
+
   getRenderer(): THREE.WebGLRenderer | null {
     return sceneManager.renderer;
+  }
+
+  getScene(): THREE.Scene {
+    return this.scene;
   }
 
   // ── Render loop ───────────────────────────────────────────────────────────
 
   private tick(_dt: number): void {
+    const t0 = performance.now();
     this.stats?.begin();
     sceneManager.renderer?.render(this.scene, this.camera);
     this.stats?.end();
     this.stats?.update();
+    // Measure after renderer.render() so renderer.info counts are final
+    this.onTickCallback?.(performance.now() - t0);
     this.updateRotationCounter();
   }
 

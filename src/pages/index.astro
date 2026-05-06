@@ -131,7 +131,7 @@ const sceneProjects = projects.map((p) => ({
 
 <script>
   import { GlassCarouselScene } from '../scenes/GlassCarouselScene';
-  import { isDebugMode } from '../utils/debug';
+  import { isDebugMode, DebugPanel } from '../utils/debug';
 
   const init = async () => {
     const canvas  = document.getElementById('glass-canvas') as HTMLCanvasElement | null;
@@ -142,37 +142,52 @@ const sceneProjects = projects.map((p) => ({
     const carouselScene = new GlassCarouselScene();
     await carouselScene.init(canvas, projects);
 
-    if (isDebugMode()) {
-      const { default: Stats } = await import('stats-gl');
-      const stats = new Stats({
-        trackGPU: true,
-        trackHz: true,
-        trackCPT: false,
-        logsPerSecond: 20,
-        graphsPerSecond: 60,
-        samplesLog: 40,
-        samplesGraph: 60,
-        precision: 2,
-        minimal: false,
-        horizontal: true,
-      });
+    if (!isDebugMode()) return;
 
-      // Position at top-right (stats-gl defaults to top-left)
-      Object.assign(stats.dom.style, {
-        position: 'fixed',
-        top: '0',
-        right: '0',
-        left: 'auto',
-        zIndex: '9999',
-      });
-      document.body.appendChild(stats.dom);
+    const renderer = carouselScene.getRenderer();
+    if (!renderer) return;
 
-      // Pass the Three.js renderer so stats-gl can hook GPU timing queries
-      const glRenderer = carouselScene.getRenderer();
-      if (glRenderer) await stats.init(glRenderer);
+    // ── stats-gl (top-right) ───────────────────────────────────────────────
+    const { default: Stats } = await import('stats-gl');
+    const stats = new Stats({
+      trackGPU: true,
+      trackHz: true,
+      trackCPT: false,
+      logsPerSecond: 20,
+      graphsPerSecond: 60,
+      samplesLog: 40,
+      samplesGraph: 60,
+      precision: 2,
+      minimal: false,
+      horizontal: true,
+    });
 
-      carouselScene.setStats(stats);
-    }
+    // init() patches the Three.js renderer for GPU timer queries — must run
+    // before begin()/end() are called in tick, and before DOM insertion so
+    // any internal resize listener fires after the element is positioned.
+    await stats.init(renderer);
+
+    // Wrap in a fixed positioner so internal style resets can't move it.
+    const statsWrap = document.createElement('div');
+    Object.assign(statsWrap.style, {
+      position: 'fixed',
+      top: '0',
+      right: '0',
+      zIndex: '9999',
+    });
+    // stats.dom may have position:fixed;left:0 baked in — neutralise it
+    stats.dom.style.position = 'relative';
+    stats.dom.style.left = 'auto';
+    statsWrap.appendChild(stats.dom);
+    document.body.appendChild(statsWrap);
+
+    carouselScene.setStats(stats);
+
+    // ── Custom debug panel (top-left) ──────────────────────────────────────
+    // Reads renderer.info after renderer.render() completes (accurate counts),
+    // independent of stats-gl so neither inflates the other's numbers.
+    const debugPanel = new DebugPanel(renderer, carouselScene.getScene());
+    carouselScene.setTickCallback((jsMs) => debugPanel.update(jsMs));
   };
 
   // Module scripts are deferred; DOMContentLoaded may have already fired
