@@ -18,7 +18,7 @@ export interface ProjectEntry {
 }
 
 // Toggle stencil clipping: true = plane only visible through glass silhouette
-const USE_STENCIL_MASK = false;
+const USE_STENCIL_MASK = true;
 
 export class GlassCarouselScene {
   private scene = new THREE.Scene();
@@ -33,7 +33,7 @@ export class GlassCarouselScene {
 
   // Drag / inertia — tweak FRICTION to taste:
   // 0 = instant snap, 0.9 = very slidey, values around 0.82–0.88 feel good
-  private static readonly FRICTION = 0.85;
+  private static readonly FRICTION = 0.9;
   private isDragging = false;
   private dragStartX = 0;
   private rotationBase = 0;   // target value at the moment the drag began
@@ -117,6 +117,9 @@ export class GlassCarouselScene {
       thickness: 0.3,
       transparent: true,
       color: 0xffffff,
+    });
+    const glassMatTest = new THREE.MeshNormalMaterial({
+      // wireframe: true,
     });
     this.glassMesh = new THREE.Mesh(glassGeo, glassMat);
     this.scene.add(this.glassMesh);
