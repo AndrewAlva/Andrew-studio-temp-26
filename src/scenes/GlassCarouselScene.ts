@@ -311,13 +311,21 @@ export class GlassCarouselScene {
 
   // ── Public navigation API ─────────────────────────────────────────────────
 
-  // Called by prev/next buttons. Spins the glass in the matching direction
-  // (unless the user prefers reduced motion) then advances the project.
-  // direction  1 = next  → glass spins left  (rotationTarget decreases)
-  // direction -1 = prev  → glass spins right (rotationTarget increases)
+  // Called by prev/next buttons. Snaps rotationTarget to the next exact
+  // multiple of π in the travel direction so the glass always settles
+  // face-on to the camera, regardless of where a mid-drag left it.
+  // direction  1 = next  → decreasing target (left spin)
+  // direction -1 = prev  → increasing target (right spin)
   navigate(direction: 1 | -1): void {
     if (!this.reducedMotion) {
-      this.rotationTarget -= direction * Math.PI;
+      // A tiny epsilon nudges us off exact multiples so floor/ceil always
+      // step at least one position when already face-on.
+      const EPS = 1e-9;
+      if (direction === 1) {
+        this.rotationTarget = Math.floor(this.rotationTarget / Math.PI - EPS) * Math.PI;
+      } else {
+        this.rotationTarget = Math.ceil(this.rotationTarget / Math.PI + EPS) * Math.PI;
+      }
     }
     this.advanceProject(direction);
   }
