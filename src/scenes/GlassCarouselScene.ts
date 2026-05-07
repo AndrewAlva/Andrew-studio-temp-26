@@ -322,9 +322,9 @@ export class GlassCarouselScene {
       // step at least one position when already face-on.
       const EPS = 1e-9;
       if (direction === 1) {
-        this.rotationTarget = Math.floor(this.rotationTarget / Math.PI - EPS) * Math.PI;
+        this.rotationTarget = Math.floor((this.rotationTarget - (Math.PI / 2)) / Math.PI - EPS) * Math.PI;
       } else {
-        this.rotationTarget = Math.ceil(this.rotationTarget / Math.PI + EPS) * Math.PI;
+        this.rotationTarget = Math.ceil((this.rotationTarget + (Math.PI / 2)) / Math.PI + EPS) * Math.PI;
       }
     }
     this.advanceProject(direction);
