@@ -6,7 +6,10 @@ import { getCollection } from 'astro:content';
 const projects = (await getCollection('projects')).sort(
   (a, b) => a.data.order - b.data.order
 );
-const first = projects[0]?.data;
+const first  = projects[0]?.data;
+// SSR-accurate initial aria-labels: prev = last project, next = second project
+const ssrPrev = projects.at(-1)?.data.title ?? '';
+const ssrNext = projects[1]?.data.title     ?? '';
 
 // Serialise only the fields the Three.js scene needs
 const sceneProjects = projects.map((p) => ({
@@ -35,6 +38,30 @@ const sceneProjects = projects.map((p) => ({
         <span data-project-type>{first?.type ?? ''}</span>
       </p>
     </div>
+
+    <!-- Prev / Next navigation -->
+    <nav class="carousel-nav" aria-label="Project navigation">
+      <button
+        id="project-prev"
+        class="carousel-nav__btn"
+        type="button"
+        aria-label={`Previous project: ${ssrPrev}`}
+      >
+        <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M11 4L6 9L11 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button
+        id="project-next"
+        class="carousel-nav__btn"
+        type="button"
+        aria-label={`Next project: ${ssrNext}`}
+      >
+        <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M7 4L12 9L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </nav>
 
     <!-- Rotation debug counter (bottom-right) -->
     <div class="rotation-counter" id="rotation-counter" aria-hidden="true">0°</div>
@@ -116,6 +143,48 @@ const sceneProjects = projects.map((p) => ({
     user-select: none;
   }
 
+  .carousel-nav {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    pointer-events: none; /* let clicks pass through except on the buttons */
+    z-index: 10;
+  }
+
+  .carousel-nav__btn {
+    pointer-events: all;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(17, 17, 17, 0.18);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .carousel-nav__btn:hover {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(17, 17, 17, 0.32);
+  }
+
+  .carousel-nav__btn:active {
+    transform: scale(0.93);
+  }
+
+  .carousel-nav__btn:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 3px;
+  }
+
   @media (max-width: 640px) {
     .project-overlay {
       bottom: 1.5rem;
@@ -125,6 +194,10 @@ const sceneProjects = projects.map((p) => ({
     .rotation-counter {
       bottom: 1.5rem;
       right: 1.25rem;
+    }
+
+    .carousel-nav {
+      padding: 0 0.75rem;
     }
   }
 </style>
@@ -141,6 +214,26 @@ const sceneProjects = projects.map((p) => ({
     const projects = JSON.parse(dataEl.textContent ?? '[]');
     const carouselScene = new GlassCarouselScene();
     await carouselScene.init(canvas, projects);
+
+    // ── Prev / Next buttons ────────────────────────────────────────────────
+    const prevBtn = document.getElementById('project-prev') as HTMLButtonElement | null;
+    const nextBtn = document.getElementById('project-next') as HTMLButtonElement | null;
+
+    const updateNavLabels = (activeIndex: number) => {
+      const n = projects.length;
+      const prevTitle = projects[(activeIndex - 1 + n) % n]?.title ?? '';
+      const nextTitle = projects[(activeIndex + 1) % n]?.title ?? '';
+      prevBtn?.setAttribute('aria-label', `Previous project: ${prevTitle}`);
+      nextBtn?.setAttribute('aria-label', `Next project: ${nextTitle}`);
+    };
+
+    // Sync labels whenever the active project changes
+    carouselScene.setProjectChangeCallback(updateNavLabels);
+    // Set initial labels (callback won't have been registered during init)
+    updateNavLabels(0);
+
+    prevBtn?.addEventListener('click', () => carouselScene.navigate(-1));
+    nextBtn?.addEventListener('click', () => carouselScene.navigate(1));
 
     if (!isDebugMode()) return;
 

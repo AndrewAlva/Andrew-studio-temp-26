@@ -45,6 +45,7 @@ export class GlassCarouselScene {
   private reducedMotion = false;
   private stats: Stats | null = null;
   private onTickCallback?: (jsMs: number) => void;
+  private projectChangeCallback?: (index: number) => void;
 
   constructor() {
     this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -160,6 +161,9 @@ export class GlassCarouselScene {
 
     // ── Initial overlay ───────────────────────────────────────────────────
     this.updateOverlay();
+    // Emit once so any registered callback can set its initial state
+    // (callback may not be registered yet, so index.astro calls it manually too)
+    this.projectChangeCallback?.(this.activeIndex);
 
     // ── Input events ──────────────────────────────────────────────────────
     if (!this.reducedMotion) {
@@ -287,6 +291,7 @@ export class GlassCarouselScene {
     });
 
     this.updateOverlay();
+    this.projectChangeCallback?.(this.activeIndex);
   }
 
   private updateOverlay(): void {
@@ -302,6 +307,23 @@ export class GlassCarouselScene {
     if (c) c.textContent = p.client;
     if (y) y.textContent = String(p.year);
     if (ty) ty.textContent = p.type;
+  }
+
+  // ── Public navigation API ─────────────────────────────────────────────────
+
+  // Called by prev/next buttons. Spins the glass in the matching direction
+  // (unless the user prefers reduced motion) then advances the project.
+  // direction  1 = next  → glass spins left  (rotationTarget decreases)
+  // direction -1 = prev  → glass spins right (rotationTarget increases)
+  navigate(direction: 1 | -1): void {
+    if (!this.reducedMotion) {
+      this.rotationTarget -= direction * Math.PI;
+    }
+    this.advanceProject(direction);
+  }
+
+  setProjectChangeCallback(cb: (index: number) => void): void {
+    this.projectChangeCallback = cb;
   }
 
   // ── Debug helpers ─────────────────────────────────────────────────────────
