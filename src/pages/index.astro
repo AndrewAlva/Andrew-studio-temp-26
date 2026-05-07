@@ -63,6 +63,19 @@ const sceneProjects = projects.map((p) => ({
       </button>
     </nav>
 
+    <!-- Project counter (bottom-centre) -->
+    <div class="project-counter" role="group" aria-label="Project counter">
+      <span
+        id="counter-current"
+        aria-label={`Project 1 of ${projects.length}: ${first?.title ?? ''}`}
+      >{String(1).padStart(2, '0')}</span>
+      <span class="counter-sep" aria-hidden="true">/</span>
+      <span
+        id="counter-total"
+        aria-label={`${projects.length} projects total`}
+      >{String(projects.length).padStart(2, '0')}</span>
+    </div>
+
     <!-- Rotation debug counter (bottom-right) -->
     <div class="rotation-counter" id="rotation-counter" aria-hidden="true">0°</div>
   </section>
@@ -185,7 +198,40 @@ const sceneProjects = projects.map((p) => ({
     outline-offset: 3px;
   }
 
+  .project-counter {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  #counter-current {
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  .counter-sep {
+    opacity: 0.3;
+  }
+
   @media (max-width: 640px) {
+    .project-counter {
+      bottom: 1.5rem;
+    }
+
     .project-overlay {
       bottom: 1.5rem;
       left: 1.25rem;
@@ -215,16 +261,25 @@ const sceneProjects = projects.map((p) => ({
     const carouselScene = new GlassCarouselScene();
     await carouselScene.init(canvas, projects);
 
-    // ── Prev / Next buttons ────────────────────────────────────────────────
-    const prevBtn = document.getElementById('project-prev') as HTMLButtonElement | null;
-    const nextBtn = document.getElementById('project-next') as HTMLButtonElement | null;
+    // ── Prev / Next buttons + project counter ─────────────────────────────
+    const prevBtn        = document.getElementById('project-prev')      as HTMLButtonElement | null;
+    const nextBtn        = document.getElementById('project-next')      as HTMLButtonElement | null;
+    const counterCurrent = document.getElementById('counter-current')   as HTMLElement | null;
+    const pad = (n: number) => String(n).padStart(2, '0');
 
     const updateNavLabels = (activeIndex: number) => {
-      const n = projects.length;
+      const n     = projects.length;
+      const title = projects[activeIndex]?.title ?? '';
       const prevTitle = projects[(activeIndex - 1 + n) % n]?.title ?? '';
       const nextTitle = projects[(activeIndex + 1) % n]?.title ?? '';
+
       prevBtn?.setAttribute('aria-label', `Previous project: ${prevTitle}`);
       nextBtn?.setAttribute('aria-label', `Next project: ${nextTitle}`);
+
+      if (counterCurrent) {
+        counterCurrent.textContent = pad(activeIndex + 1);
+        counterCurrent.setAttribute('aria-label', `Project ${activeIndex + 1} of ${n}: ${title}`);
+      }
     };
 
     // Sync labels whenever the active project changes
