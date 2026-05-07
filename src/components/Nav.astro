@@ -7,6 +7,22 @@ import { SITE_NAME } from '../config/site';
 <header class="nav-wrapper">
   <nav class="nav" aria-label="Main navigation">
     <a href="/" class="nav-site-name">{SITE_NAME}</a>
+
+    <!-- Clock — absolutely centred so it never shifts the flex edges -->
+    <time
+      id="nav-clock"
+      class="nav-clock"
+      datetime=""
+      aria-label="Current time in Ciudad de México"
+    >
+      <span class="clock-time" id="clock-time" aria-hidden="true">--:--:--</span>
+      <span class="clock-meta" aria-hidden="true">
+        <span id="clock-tz"></span>
+        <span class="clock-sep">·</span>
+        <span>Ciudad de México</span>
+      </span>
+    </time>
+
     <ul class="nav-links" role="list">
       <li><a href="/" class="nav-link">Home</a></li>
       <li><a href="/about" class="nav-link">About</a></li>
@@ -37,6 +53,7 @@ import { SITE_NAME } from '../config/site';
   }
 
   .nav {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -44,6 +61,46 @@ import { SITE_NAME } from '../config/site';
     padding: 0 2rem;
     max-width: 1400px;
     margin: 0 auto;
+  }
+
+  .nav-clock {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    pointer-events: none;
+    user-select: none;
+    text-decoration: none;
+  }
+
+  .clock-time {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .clock-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    font-family: var(--font-sans);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    line-height: 1;
+  }
+
+  .clock-sep {
+    opacity: 0.4;
   }
 
   .nav-site-name {
@@ -103,4 +160,36 @@ import { SITE_NAME } from '../config/site';
 
   const btn = document.getElementById('contact-open-btn') as HTMLButtonElement | null;
   btn?.addEventListener('click', () => openModal(btn));
+
+  // ── Mexico City clock ────────────────────────────────────────────────────
+  const TZ = 'America/Mexico_City';
+
+  const timeFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  // Extract the timezone abbreviation at runtime so it follows any future
+  // rule changes in the IANA database (Mexico City is UTC-6 / CST since 2023).
+  const tzFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ,
+    timeZoneName: 'short',
+  });
+
+  const timeEl  = document.getElementById('clock-time') as HTMLElement | null;
+  const tzEl    = document.getElementById('clock-tz')   as HTMLElement | null;
+  const clockEl = document.getElementById('nav-clock')  as HTMLTimeElement | null;
+
+  function tickClock() {
+    const now = new Date();
+    if (timeEl)  timeEl.textContent  = timeFmt.format(now);
+    if (tzEl)    tzEl.textContent    = tzFmt.formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'CST';
+    if (clockEl) clockEl.dateTime    = now.toISOString();
+  }
+
+  tickClock(); // paint immediately — avoids a one-second flash of "--:--:--"
+  setInterval(tickClock, 1000);
 </script>
