@@ -39,6 +39,7 @@ export class GlassCarouselScene {
   private rotationBase = 0;   // target value at the moment the drag began
   private rotationTarget = 0; // where the drag is pointing right now
   private rotationCurrent = 0; // what the mesh is actually rendered at
+  private rotationCount = 0;
 
   private canvas: HTMLCanvasElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -376,7 +377,10 @@ export class GlassCarouselScene {
     const el = document.getElementById('rotation-counter');
     if (!el || !this.glassMesh) return;
     const deg = Math.round(this.glassMesh.rotation.y * (180 / Math.PI));
-    el.textContent = `${deg}°`;
+    if (deg !== this.rotationCount) {
+      this.rotationCount = deg;
+      el.textContent = `${deg}°`;
+    }
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────────
